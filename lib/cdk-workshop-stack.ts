@@ -1,9 +1,9 @@
 import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as sns from 'aws-cdk-lib/aws-sns';
-import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
-import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as apigw from 'aws-cdk-lib/aws-apigateway'
+import { HitCounter } from './hitcounter';
+import { TableViewer } from 'cdk-dynamo-table-viewer';
 import { Construct } from 'constructs';
 import { Code, Handler } from 'aws-cdk-lib/aws-lambda';
 
@@ -18,5 +18,18 @@ export class CdkWorkshopStack extends Stack {
     code: lambda.Code.fromAsset('lambda'),
     handler: 'hello.handler'
   });
+
+  const helloWithCounter = new HitCounter(this, 'HelloHitCounter', {
+    downstream: hello
+  });
+    
+    //defines an API gateway REST API resource backend by our "hello" function
+    new apigw.LambdaRestApi(this, 'Endpoint', { 
+      handler: helloWithCounter.handler
+    })
+    new TableViewer(this, 'ViewHitCounter', {
+      title: 'Hello Hits',
+      table: helloWithCounter.table
+    });
   }
 }
